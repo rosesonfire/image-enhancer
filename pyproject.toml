@@ -1,0 +1,31 @@
+[project]
+name = "image-enhancer"
+version = "0.1.0"
+description = "Attempt to create a naive image resolution enhancer"
+authors = [{ name = "Ishtiaque Khan", email = "ishti.ik@gmail.com" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["pillow (>=12.1.1,<13.0.0)", "numpy (>=2.4.3,<3.0.0)"]
+
+[project.optional-dependencies]
+dev = ["black>=24.0.0", "flake8>=7.0.0", "isort>=5.0.0", "pre-commit>=3.0.0"]
+
+[tool.poetry]
+packages = [{ include = "src" }]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
