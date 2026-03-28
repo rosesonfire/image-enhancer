@@ -1,11 +1,17 @@
 import time
 
+from typing import TypeAlias
+
 from PIL import Image
 import numpy as np
 
-from .config import FILE_PATH, SCALE
+from .config import FILE_PATH, SCALE, DIST_THRESHOLD
+
 
 start_time = time.time()
+
+
+Pixel: TypeAlias = np.typing.NDArray[np.uint8]
 
 
 class EnhancableImage:
@@ -25,7 +31,7 @@ class EnhancableImage:
 
         matrix = self._matrix
 
-        for _ in range(1, scale):
+        for _ in range(2, scale):
             matrix = self._enhance(matrix)
 
         result_image = Image.fromarray(matrix)
@@ -58,23 +64,35 @@ class EnhancableImage:
         pixel_4 = expanded_matrix[starting_row + 2, starting_col + 2]
 
         expanded_matrix[starting_row, starting_col + 1] = self._derive_average_pixel(
-            pixel_1, pixel_2
+            pixel_1, pixel_2, pixel_1
         )
         expanded_matrix[starting_row + 1, starting_col] = self._derive_average_pixel(
-            pixel_1, pixel_3
+            pixel_1, pixel_3, pixel_3
         )
         expanded_matrix[starting_row + 1, starting_col + 1] = (
-            self._derive_average_pixel(pixel_1, pixel_2, pixel_3, pixel_4)
+            self._derive_average_pixel(
+                self._derive_average_pixel(pixel_1, pixel_2, pixel_2),
+                self._derive_average_pixel(pixel_3, pixel_4),
+                pixel_3,
+            )
         )
         expanded_matrix[starting_row + 1, starting_col + 2] = (
-            self._derive_average_pixel(pixel_2, pixel_4)
+            self._derive_average_pixel(pixel_2, pixel_4, pixel_4)
         )
         expanded_matrix[starting_row + 2, starting_col + 1] = (
-            self._derive_average_pixel(pixel_3, pixel_4)
+            self._derive_average_pixel(pixel_3, pixel_4, pixel_3)
         )
 
-    def _derive_average_pixel(self, *pixels):
-        return np.round(np.sum(pixels, axis=0) / len(pixels)).astype(np.uint8)
+    def _derive_average_pixel(
+        self, pixel_1: Pixel, pixel_2: Pixel, default_pixel=None
+    ) -> Pixel:
+        dist = np.linalg.norm(pixel_1 - pixel_2)
+
+        if dist > DIST_THRESHOLD:
+            # preserve sharp edges
+            return pixel_1
+        else:
+            return np.average([pixel_1, pixel_2], axis=0).astype(np.uint8)
 
 
 enhanced_image = EnhancableImage(path=FILE_PATH).enhance(scale=SCALE)
